@@ -37,7 +37,7 @@ object DataManager{
         try{
             val file = context.openFileInput(AppFileName)
             val bytes = file.readBytes()
-            Log.i(MainActivity.logTag,"Bytes Size on load: ${bytes.size}")
+            //Log.i(MainActivity.logTag,"Bytes Size on load: ${bytes.size}")
             file.close()
 
             val intArray = toIntArray(bytes)
@@ -69,7 +69,7 @@ object DataManager{
             }
             val byteArray = buffer.array()
 
-            Log.i(MainActivity.logTag,"Bytes Size on save: ${byteArray.size}")
+            //Log.i(MainActivity.logTag,"Bytes Size on save: ${byteArray.size}")
             val file = context.openFileOutput(AppFileName,Context.MODE_PRIVATE)
             file.write(byteArray)
             file.close()

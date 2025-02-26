@@ -1,11 +1,14 @@
 package com.marcusdoucette.petfoodtracker.DefaultView
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedContentTransitionScope
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -14,8 +17,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
-import androidx.compose.material.icons.filled.ArrowForward
-import androidx.compose.material.icons.sharp.KeyboardArrowLeft
 import androidx.compose.material3.Button
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -41,69 +42,121 @@ import com.marcusdoucette.petfoodtracker.ui.theme.PetFoodTrackerTheme
 fun DefaultView(modifier: Modifier = Modifier) {
     val vm = viewModel<DefaultViewModel>()
     val state by vm.state.collectAsStateWithLifecycle()
-    DumbDefaultView(vm::ActionHandler,state,modifier=modifier)
+    AnimatedDefaultView(vm::ActionHandler, state, modifier = modifier)
 }
 
 @Composable
-fun DumbDefaultView(action:(DefaultAction)->Unit,state:DefaultState,modifier: Modifier = Modifier) {
-    Scaffold{innerPadding->
-        Column(modifier=Modifier.background(Color.LightGray).padding(innerPadding)){
-            Text(state.headerText,
-                fontWeight= FontWeight.Bold,
-                textAlign = TextAlign.Center,
-                fontSize = 30.sp,
-                modifier=Modifier.fillMaxWidth()
-            )
-            HorizontalDivider()
-            Content(action,state,modifier=Modifier.weight(1f))
-            HorizontalDivider()
-            Row(
-                horizontalArrangement = Arrangement.SpaceEvenly,
-                modifier=Modifier.fillMaxWidth()
-
-            ){
-                Button(onClick={action(DefaultAction.LeftScrollButton)}){
-                    Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft,
-                        contentDescription = "back")
-                }
-                Button(onClick={action(DefaultAction.RightScrollButton)}){
-                    Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                        contentDescription = "next")
-                }
-            }
+fun AnimatedDefaultView(
+    action: (DefaultAction) -> Unit,
+    state: DefaultState,
+    modifier: Modifier = Modifier
+) {
+    val dir = when{
+        state.headerText<state.prevHeaderText->{
+            AnimatedContentTransitionScope.SlideDirection.Right
         }
+        state.headerText>state.prevHeaderText->{
+            AnimatedContentTransitionScope.SlideDirection.Left
+        }
+        else -> {
+            AnimatedContentTransitionScope.SlideDirection.Down
+        }
+    }
+    AnimatedContent(
+        targetState = state.headerText,
+        transitionSpec = {
+            (slideIntoContainer(
+                towards = dir,
+                animationSpec = tween(DefaultViewModel.AnimationTime.toInt())
+            )) togetherWith slideOutOfContainer(
+                towards = dir,
+                animationSpec = tween(DefaultViewModel.AnimationTime.toInt())
+            )
+        }
+    ) {animHeaderText->
+        DumbDefaultView(action,state.copy(
+            headerText=animHeaderText,
+            prevHeaderText=state.prevHeaderText,
+            bools = state.bools,
+            today_num = state.today_num
+        ),modifier)
     }
 }
 
 @Composable
-fun Content(action:(DefaultAction)->Unit,state:DefaultState,modifier: Modifier = Modifier) {
+fun DumbDefaultView(
+    action: (DefaultAction) -> Unit,
+    state: DefaultState,
+    modifier: Modifier = Modifier
+) {
+    Scaffold { innerPadding ->
+        Column(
+            modifier = modifier
+                .background(Color.LightGray)
+                .padding(innerPadding)
+        ) {
+            Text(
+                state.headerText,
+                fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.Center,
+                fontSize = 30.sp,
+                modifier = Modifier.fillMaxWidth()
+            )
+            HorizontalDivider()
+            Content(action, state, modifier = Modifier.weight(1f))
+            HorizontalDivider()
+            Row(
+                horizontalArrangement = Arrangement.SpaceEvenly,
+                modifier = Modifier.fillMaxWidth()
+
+            ) {
+                Button(onClick = { action(DefaultAction.LeftScrollButton) }) {
+                    Icon(
+                        Icons.AutoMirrored.Filled.KeyboardArrowLeft,
+                        contentDescription = "back"
+                    )
+                }
+                Button(onClick = { action(DefaultAction.RightScrollButton) }) {
+                    Icon(
+                        Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                        contentDescription = "next"
+                    )
+                }
+            }
+        }
+    }
+
+}
+
+@Composable
+fun Content(action: (DefaultAction) -> Unit, state: DefaultState, modifier: Modifier = Modifier) {
     LazyColumn(
-        modifier=modifier,
+        modifier = modifier,
         verticalArrangement = Arrangement.SpaceEvenly
-    ){
-        item{
+    ) {
+        item {
             TopRow()
         }
-        item{
-            ContentRow("Sun",action,state,0)
+        item {
+            ContentRow("Sun", action, state, 0)
         }
-        item{
-            ContentRow("Mon",action,state,1)
+        item {
+            ContentRow("Mon", action, state, 1)
         }
-        item{
-            ContentRow("Tue",action,state,2)
+        item {
+            ContentRow("Tue", action, state, 2)
         }
-        item{
-            ContentRow("Wed",action,state,3)
+        item {
+            ContentRow("Wed", action, state, 3)
         }
-        item{
-            ContentRow("Thu",action,state,4)
+        item {
+            ContentRow("Thu", action, state, 4)
         }
-        item{
-            ContentRow("Fri",action,state,5)
+        item {
+            ContentRow("Fri", action, state, 5)
         }
-        item{
-            ContentRow("Sat",action,state,6)
+        item {
+            ContentRow("Sat", action, state, 6)
         }
 
     }
@@ -111,40 +164,62 @@ fun Content(action:(DefaultAction)->Unit,state:DefaultState,modifier: Modifier =
 
 @Composable
 fun TopRow(modifier: Modifier = Modifier) {
-    val wid = LocalConfiguration.current.screenWidthDp.dp/5
+    val wid = LocalConfiguration.current.screenWidthDp.dp / 5
     Row(
-        modifier=modifier.fillMaxWidth(),
-    ){
-        Spacer(modifier=Modifier.fillMaxWidth(0.2f))
-        Text("AM",textAlign = TextAlign.Center,color= Color.Black,modifier=Modifier.width(wid))
-        Spacer(modifier=Modifier.width(wid))
-        Text("PM", textAlign = TextAlign.Center,color=Color.Black,modifier=Modifier.width(wid))
-        Spacer(modifier=Modifier.width(wid))
+        modifier = modifier.fillMaxWidth(),
+    ) {
+        Spacer(modifier = Modifier.fillMaxWidth(0.2f))
+        Text(
+            "AM",
+            textAlign = TextAlign.Center,
+            color = Color.Black,
+            modifier = Modifier.width(wid)
+        )
+        Spacer(modifier = Modifier.width(wid))
+        Text(
+            "PM",
+            textAlign = TextAlign.Center,
+            color = Color.Black,
+            modifier = Modifier.width(wid)
+        )
+        Spacer(modifier = Modifier.width(wid))
     }
 }
 
 @Composable
-fun ContentRow(name:String,action:(DefaultAction)->Unit,state:DefaultState,daynum:Int,modifier: Modifier = Modifier) {
-    val wid = LocalConfiguration.current.screenWidthDp.dp/5
+fun ContentRow(
+    name: String,
+    action: (DefaultAction) -> Unit,
+    state: DefaultState,
+    daynum: Int,
+    modifier: Modifier = Modifier
+) {
+    val wid = LocalConfiguration.current.screenWidthDp.dp / 5
     Row(
-        modifier=modifier.height(50.dp),
+        modifier = modifier.height(50.dp),
         verticalAlignment = Alignment.CenterVertically
-    ){
+    ) {
         var textMod = Modifier.width(wid)
-        if(state.today_num==daynum){
+        if (state.today_num == daynum) {
             textMod = textMod.background(Color.Green)
         }
-        Text(name,
+        Text(
+            name,
             textAlign = TextAlign.Center,
-            modifier=textMod)
-        Switch(state.bools[daynum*2],
-            {action(DefaultAction.SwitchButton(daynum*2))},
-            modifier=Modifier.width(wid))
-        Spacer(modifier=Modifier.width(wid))
-        Switch(state.bools[daynum*2+1],
-            {action(DefaultAction.SwitchButton(daynum*2+1))},
-            modifier=Modifier.width(wid))
-        Spacer(modifier=Modifier.width(wid))
+            modifier = textMod
+        )
+        Switch(
+            state.bools[daynum * 2],
+            { action(DefaultAction.SwitchButton(daynum * 2)) },
+            modifier = Modifier.width(wid)
+        )
+        Spacer(modifier = Modifier.width(wid))
+        Switch(
+            state.bools[daynum * 2 + 1],
+            { action(DefaultAction.SwitchButton(daynum * 2 + 1)) },
+            modifier = Modifier.width(wid)
+        )
+        Spacer(modifier = Modifier.width(wid))
     }
 }
 
@@ -152,16 +227,19 @@ fun ContentRow(name:String,action:(DefaultAction)->Unit,state:DefaultState,daynu
 @Composable
 private fun DefaultPreview() {
     PetFoodTrackerTheme {
-        DumbDefaultView({},DefaultState(
-            "Example yyyy-mm-dd",
-            bools = listOf(
-                false,true,
-                true,false,
-                false,true,
-                true,false,
-                false,true,
-                true,false,
-                false,true)
-        ))
+        DumbDefaultView(
+            {}, DefaultState(
+                "Example yyyy-mm-dd",
+                bools = listOf(
+                    false, true,
+                    true, false,
+                    false, true,
+                    true, false,
+                    false, true,
+                    true, false,
+                    false, true
+                )
+            )
+        )
     }
 }
