@@ -16,7 +16,8 @@ data class DefaultState(
     val headerText:String,
     val bools:List<Boolean> = listOf(),
     val today_num:Int = -1,
-    val prevHeaderText:String = headerText
+    val prevHeaderText:String = headerText,
+    val animating:Boolean=false
 )
 
 sealed interface DefaultAction{
@@ -39,9 +40,9 @@ class DefaultViewModel: ViewModel() {
 
     val day_of_week = today.compareTo(current_week_data.startDate)
 
-
     private val _state = MutableStateFlow(DefaultState(getHeader(),current_week_data.booleans,day_of_week))
     val state = _state.asStateFlow()
+    var prev_state = state.value
 
     fun ActionHandler(action:DefaultAction){
         when(action){
@@ -51,8 +52,9 @@ class DefaultViewModel: ViewModel() {
                     current_week_data = DataManager.GetWeek(today, current_week_offset)
                     val header = getHeader()
                     val today_num = if (current_week_offset == 0) day_of_week else -1
+                    prev_state = state.value
                     _state.update { old ->
-                        DefaultState(header, current_week_data.booleans, today_num, old.headerText)
+                        DefaultState(header, current_week_data.booleans, today_num, old.headerText,true)
                     }
                     DisallowRapidUpdates()
                 }
@@ -63,8 +65,9 @@ class DefaultViewModel: ViewModel() {
                     current_week_data = DataManager.GetWeek(today, current_week_offset)
                     val header = getHeader()
                     val today_num = if (current_week_offset == 0) day_of_week else -1
+                    prev_state = state.value
                     _state.update { old ->
-                        DefaultState(header, current_week_data.booleans, today_num, old.headerText)
+                        DefaultState(header, current_week_data.booleans, today_num, old.headerText,true)
                     }
                     DisallowRapidUpdates()
                 }
@@ -94,6 +97,9 @@ class DefaultViewModel: ViewModel() {
         viewModelScope.launch(Dispatchers.IO){
             delay(AnimationTime + AnimationTime/10)
             updateAllowed = true
+            _state.update{old->
+                old.copy(animating=false)
+            }
         }
     }
 

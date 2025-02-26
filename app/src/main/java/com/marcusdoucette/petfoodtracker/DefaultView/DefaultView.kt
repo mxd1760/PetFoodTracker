@@ -2,13 +2,25 @@ package com.marcusdoucette.petfoodtracker.DefaultView
 
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedContentTransitionScope
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.ExperimentalAnimationApi
+import androidx.compose.animation.core.FiniteAnimationSpec
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -28,10 +40,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -42,44 +56,50 @@ import com.marcusdoucette.petfoodtracker.ui.theme.PetFoodTrackerTheme
 fun DefaultView(modifier: Modifier = Modifier) {
     val vm = viewModel<DefaultViewModel>()
     val state by vm.state.collectAsStateWithLifecycle()
-    AnimatedDefaultView(vm::ActionHandler, state, modifier = modifier)
+    AnimatedDefaultView(
+        vm::ActionHandler,
+        state,
+        vm.prev_state,
+        modifier = modifier
+    )
 }
 
+@OptIn(ExperimentalAnimationApi::class)
 @Composable
 fun AnimatedDefaultView(
     action: (DefaultAction) -> Unit,
     state: DefaultState,
+    prevState: DefaultState,
     modifier: Modifier = Modifier
 ) {
-    val dir = when{
-        state.headerText<state.prevHeaderText->{
-            AnimatedContentTransitionScope.SlideDirection.Right
+    val animating = state.animating
+    val offset by animateFloatAsState(
+        targetValue = if (animating) 1f else 0f,
+        animationSpec = tween(if (animating) DefaultViewModel.AnimationTime.toInt() else 0)
+    )
+
+    val dir =
+        LocalConfiguration.current.screenWidthDp * if (state.headerText < prevState.headerText) 1 else -1
+
+    if(animating) {
+        Box(
+            modifier = Modifier
+                .graphicsLayer {
+                    translationX = (offset * dir).dp.toPx()
+                }
+        ) {
+            DumbDefaultView(action, prevState, modifier)
         }
-        state.headerText>state.prevHeaderText->{
-            AnimatedContentTransitionScope.SlideDirection.Left
+        Box(
+            modifier = Modifier
+                .graphicsLayer {
+                    translationX = ((offset * dir) - dir).dp.toPx()
+                }
+        ) {
+            DumbDefaultView(action, state, modifier)
         }
-        else -> {
-            AnimatedContentTransitionScope.SlideDirection.Down
-        }
-    }
-    AnimatedContent(
-        targetState = state.headerText,
-        transitionSpec = {
-            (slideIntoContainer(
-                towards = dir,
-                animationSpec = tween(DefaultViewModel.AnimationTime.toInt())
-            )) togetherWith slideOutOfContainer(
-                towards = dir,
-                animationSpec = tween(DefaultViewModel.AnimationTime.toInt())
-            )
-        }
-    ) {animHeaderText->
-        DumbDefaultView(action,state.copy(
-            headerText=animHeaderText,
-            prevHeaderText=state.prevHeaderText,
-            bools = state.bools,
-            today_num = state.today_num
-        ),modifier)
+    } else {
+        DumbDefaultView(action,state,modifier)
     }
 }
 
@@ -92,6 +112,7 @@ fun DumbDefaultView(
     Scaffold { innerPadding ->
         Column(
             modifier = modifier
+                .fillMaxSize()
                 .background(Color.LightGray)
                 .padding(innerPadding)
         ) {
@@ -227,9 +248,23 @@ fun ContentRow(
 @Composable
 private fun DefaultPreview() {
     PetFoodTrackerTheme {
-        DumbDefaultView(
-            {}, DefaultState(
-                "Example yyyy-mm-dd",
+        AnimatedDefaultView(
+            action = {},
+            state = DefaultState(
+                "State",
+                bools = listOf(
+                    false, true,
+                    true, false,
+                    false, true,
+                    true, false,
+                    false, true,
+                    true, false,
+                    false, true
+                ),
+                animating=true
+            ),
+            prevState = DefaultState(
+                "PrevState",
                 bools = listOf(
                     false, true,
                     true, false,
