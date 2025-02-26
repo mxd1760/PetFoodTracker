@@ -20,19 +20,26 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 class MainActivity : ComponentActivity() {
+    companion object{
+        val logTag = "PetFoodTrackerLog"
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-
-        val context = this
-        lifecycleScope.launch(Dispatchers.IO){
-            DataManager.LoadData(context)
-        }
 
         setContent {
             PetFoodTrackerTheme {
                 DefaultView()
             }
+        }
+    }
+
+    override fun onStart(){
+        super.onStart()
+        val context = this
+        lifecycleScope.launch(Dispatchers.IO){
+            DataManager.LoadData(context)
         }
     }
 

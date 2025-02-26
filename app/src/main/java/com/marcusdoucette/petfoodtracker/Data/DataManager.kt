@@ -2,11 +2,13 @@ package com.marcusdoucette.petfoodtracker.Data
 
 import android.content.Context
 import android.util.Log
+import com.marcusdoucette.petfoodtracker.MainActivity
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.daysUntil
 import kotlinx.datetime.plus
 import kotlinx.datetime.toKotlinLocalDate
+import java.nio.ByteBuffer
 
 
 const val AppFileName = "data.dat"
@@ -33,31 +35,47 @@ object DataManager{
 
     fun LoadData(context: Context){
         try{
-            context.openFileInput(AppFileName).bufferedReader().useLines{lines->
-                lines.forEach{item->
-                    val (week,bools) = parseCustomInt(item.toInt())
+            val file = context.openFileInput(AppFileName)
+            val bytes = file.readBytes()
+            Log.i(MainActivity.logTag,"Bytes Size on load: ${bytes.size}")
+            file.close()
+
+            val intArray = toIntArray(bytes)
+            intArray.forEach {
+                    val (week,bools) = parseCustomInt(it)
                     data.put(week,bools)
-                }
             }
         }catch (e:Exception){
-            Log.d("PetFoodTracker","No File Found")
+            Log.d(MainActivity.logTag,"No File Found")
         }
-
+    }
+    fun toIntArray(bytes:ByteArray):IntArray{
+        val out = IntArray(bytes.size/4)
+        for (i in 0 until bytes.size/4){
+            out[i] = (bytes[i * 4].toInt() and 0xFF shl 24) or
+                    (bytes[i * 4 + 1].toInt() and 0xFF shl 16) or
+                    (bytes[i * 4 + 2].toInt() and 0xFF shl 8) or
+                    (bytes[i * 4 + 3].toInt() and 0xFF)
+        }
+        return out;
     }
     fun SaveData(context:Context){
         try{
-            context.openFileOutput(AppFileName,Context.MODE_PRIVATE).use{
-                for(week in data.keys){
-                    val bools = data[week]?:0
-                    val entry = convertToCustomInt(week,bools)
-                    val byteArray = (entry.toString()+"\n").toByteArray()
-                    it.write(byteArray)
-                }
+            val buffer = ByteBuffer.allocate(data.size*4)
+            for(week in data.keys){
+                val bools = data[week]?:0
+                val entry = convertToCustomInt(week,bools)
+                buffer.putInt(entry)
             }
-        }catch (e:Exception){
-            Log.d("PetFoodTracker","Failed to save")
-        }
+            val byteArray = buffer.array()
 
+            Log.i(MainActivity.logTag,"Bytes Size on save: ${byteArray.size}")
+            val file = context.openFileOutput(AppFileName,Context.MODE_PRIVATE)
+            file.write(byteArray)
+            file.close()
+        }catch (e:Exception){
+            Log.d(MainActivity.logTag,"Failed to save")
+        }
     }
     fun GetWeek(date:LocalDate,offset:Int = 0):Week{
         var weekInt:Int = weekIntFromDate(date)
