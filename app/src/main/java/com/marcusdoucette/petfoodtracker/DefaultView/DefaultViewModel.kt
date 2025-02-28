@@ -1,6 +1,5 @@
 package com.marcusdoucette.petfoodtracker.DefaultView
 
-import androidx.compose.runtime.DisposableEffect
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.marcusdoucette.petfoodtracker.Data.DataManager
