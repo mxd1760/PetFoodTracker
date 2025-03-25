@@ -21,10 +21,12 @@ import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material3.Button
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -69,7 +71,7 @@ fun AnimatedDefaultView(
     val dir =
         LocalConfiguration.current.screenWidthDp * if (state.headerText < prevState.headerText) 1 else -1
 
-    if(animating) {
+    if (animating) {
         Box(
             modifier = Modifier
                 .graphicsLayer {
@@ -87,7 +89,7 @@ fun AnimatedDefaultView(
             DumbDefaultView(action, state, modifier)
         }
     } else {
-        DumbDefaultView(action,state,modifier)
+        DumbDefaultView(action, state, modifier)
     }
 }
 
@@ -106,6 +108,7 @@ fun DumbDefaultView(
         ) {
             Text(
                 state.headerText,
+                color=Color.Black,
                 fontWeight = FontWeight.Bold,
                 textAlign = TextAlign.Center,
                 fontSize = 30.sp,
@@ -134,7 +137,6 @@ fun DumbDefaultView(
             }
         }
     }
-
 }
 
 @Composable
@@ -214,6 +216,7 @@ fun ContentRow(
         }
         Text(
             name,
+            color = Color.Black,
             textAlign = TextAlign.Center,
             modifier = textMod
         )
@@ -249,7 +252,7 @@ private fun DefaultPreview() {
                     true, false,
                     false, true
                 ),
-                animating=true
+                animating = true
             ),
             prevState = DefaultState(
                 "PrevState",
