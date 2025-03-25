@@ -4,4 +4,4 @@ This is a simple app built with Jetpack Compose in Android Studio. It's meant to
 
 ## Setup Instructions
 
-You should be able to just load the project into android studio and run it on an emulator.
+You should be able to just load the project into android studio with import from github and run it on an emulator after it builds.
