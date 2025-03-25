@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">PetFoodTracker</string>
+    <string name="notification_channel_name">PFTChannel</string>
 </resources>
