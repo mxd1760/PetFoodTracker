@@ -4,4 +4,6 @@ This is a simple app built with Jetpack Compose in Android Studio. It's meant to
 
 ## Setup Instructions
 
-You should be able to just load the project into android studio with import from github and run it on an emulator after it builds.
+ - download & open android studio
+ - paste the link to this repo into the "Repository URL" field of the "clone repository" option for starting a project with the git version control setting
+ - wait for it to load all the dependencies and then you will need to configure an android emulator (or plug in an android phone with debug permissions) and then hit the run button.
